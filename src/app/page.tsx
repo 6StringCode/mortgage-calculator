@@ -1,103 +1,312 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+
+interface FormErrors {
+  homePrice?: string;
+  interestRate?: string;
+  yearlyTaxAmount?: string;
+  downPaymentPercent?: string;
+  general?: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [homePrice, setHomePrice] = useState<string>('');
+  const [interestRate, setInterestRate] = useState<string>('6.5'); // Current average rate as of March 2024
+  const [yearlyTaxAmount, setYearlyTaxAmount] = useState<string>('');
+  const [downPaymentPercent, setDownPaymentPercent] = useState<string>('20');
+  const [downPaymentAmount, setDownPaymentAmount] = useState<string>('');
+  const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  // Calculate down payment amount when home price or percentage changes
+  useEffect(() => {
+    if (homePrice && downPaymentPercent) {
+      const amount = (parseFloat(homePrice) * parseFloat(downPaymentPercent)) / 100;
+      setDownPaymentAmount(amount.toFixed(2));
+    }
+  }, [homePrice, downPaymentPercent]);
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    let isValid = true;
+
+    // Validate Home Price
+    if (!homePrice) {
+      newErrors.homePrice = 'Home price is required';
+      isValid = false;
+    } else if (parseFloat(homePrice) <= 0) {
+      newErrors.homePrice = 'Home price must be greater than 0';
+      isValid = false;
+    }
+
+    // Validate Interest Rate
+    if (!interestRate) {
+      newErrors.interestRate = 'Interest rate is required';
+      isValid = false;
+    } else if (parseFloat(interestRate) <= 0 || parseFloat(interestRate) > 100) {
+      newErrors.interestRate = 'Interest rate must be between 0 and 100';
+      isValid = false;
+    }
+
+    // Validate Yearly Tax Amount
+    if (!yearlyTaxAmount) {
+      newErrors.yearlyTaxAmount = 'Yearly tax amount is required';
+      isValid = false;
+    } else if (parseFloat(yearlyTaxAmount) < 0) {
+      newErrors.yearlyTaxAmount = 'Yearly tax amount cannot be negative';
+      isValid = false;
+    }
+
+    // Validate Down Payment Percentage
+    if (!downPaymentPercent) {
+      newErrors.downPaymentPercent = 'Down payment percentage is required';
+      isValid = false;
+    } else if (parseFloat(downPaymentPercent) < 0 || parseFloat(downPaymentPercent) > 100) {
+      newErrors.downPaymentPercent = 'Down payment percentage must be between 0 and 100';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Clear previous errors and results
+    setErrors({});
+    setMonthlyPayment(null);
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Simulate API call or complex calculation
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const principal = parseFloat(homePrice) - parseFloat(downPaymentAmount);
+      const rate = parseFloat(interestRate) / 100 / 12;
+      const term = 30 * 12;
+      const yearlyTax = parseFloat(yearlyTaxAmount);
+
+      const monthlyMortgage = (principal * rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1);
+      const monthlyTax = yearlyTax / 12;
+      const totalMonthly = monthlyMortgage + monthlyTax;
+
+      setMonthlyPayment(totalMonthly);
+    } catch {
+      setErrors({
+        ...errors,
+        general: 'An error occurred during calculation. Please try again.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen p-8 bg-gray-50" role="main">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Mortgage Calculator</h1>
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          aria-label="Mortgage calculator form"
+          noValidate
+        >
+          <div>
+            <label htmlFor="homePrice" className="block text-sm font-medium text-gray-700">
+              Home Price ($)
+            </label>
+            <input
+              type="number"
+              id="homePrice"
+              value={homePrice}
+              onChange={(e) => {
+                setHomePrice(e.target.value);
+                setErrors(prev => ({ ...prev, homePrice: undefined }));
+              }}
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.homePrice ? 'border-red-500' : ''
+                }`}
+              placeholder="Enter home price"
+              aria-required="true"
+              min="0"
+              step="1000"
+              aria-label="Home price in dollars"
+              aria-invalid={!!errors.homePrice}
+              aria-describedby={errors.homePrice ? 'homePrice-error' : undefined}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {errors.homePrice && (
+              <p id="homePrice-error" className="mt-1 text-sm text-red-600" role="alert">
+                {errors.homePrice}
+              </p>
+            )}
+          </div>
+
+          <fieldset className="space-y-2">
+            <legend className="block text-sm font-medium text-gray-700">
+              Down Payment
+            </legend>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="downPaymentPercent" className="block text-xs text-gray-500">
+                  Percentage (%)
+                </label>
+                <input
+                  type="number"
+                  id="downPaymentPercent"
+                  value={downPaymentPercent}
+                  onChange={(e) => {
+                    setDownPaymentPercent(e.target.value);
+                    setErrors(prev => ({ ...prev, downPaymentPercent: undefined }));
+                  }}
+                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.downPaymentPercent ? 'border-red-500' : ''
+                    }`}
+                  placeholder="20"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  aria-label="Down payment percentage"
+                  aria-invalid={!!errors.downPaymentPercent}
+                  aria-describedby={errors.downPaymentPercent ? 'downPaymentPercent-error' : undefined}
+                />
+                {errors.downPaymentPercent && (
+                  <p id="downPaymentPercent-error" className="mt-1 text-sm text-red-600" role="alert">
+                    {errors.downPaymentPercent}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="downPaymentAmount" className="block text-xs text-gray-500">
+                  Amount ($)
+                </label>
+                <input
+                  type="number"
+                  id="downPaymentAmount"
+                  value={downPaymentAmount}
+                  readOnly
+                  className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-black"
+                  placeholder="0.00"
+                  aria-label="Calculated down payment amount"
+                  aria-readonly="true"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <div>
+            <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700">
+              Interest Rate (%)
+            </label>
+            <input
+              type="number"
+              id="interestRate"
+              value={interestRate}
+              onChange={(e) => {
+                setInterestRate(e.target.value);
+                setErrors(prev => ({ ...prev, interestRate: undefined }));
+              }}
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.interestRate ? 'border-red-500' : ''
+                }`}
+              placeholder="Enter interest rate"
+              step="0.01"
+              min="0"
+              max="100"
+              aria-label="Interest rate percentage"
+              aria-invalid={!!errors.interestRate}
+              aria-describedby={errors.interestRate ? 'interestRate-error' : undefined}
+            />
+            {errors.interestRate && (
+              <p id="interestRate-error" className="mt-1 text-sm text-red-600" role="alert">
+                {errors.interestRate}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-500" aria-live="polite">
+              Current average 30-year fixed rate (as of March 2024)
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="yearlyTaxAmount" className="block text-sm font-medium text-gray-700">
+              Yearly Property Tax ($)
+            </label>
+            <input
+              type="number"
+              id="yearlyTaxAmount"
+              value={yearlyTaxAmount}
+              onChange={(e) => {
+                setYearlyTaxAmount(e.target.value);
+                setErrors(prev => ({ ...prev, yearlyTaxAmount: undefined }));
+              }}
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.yearlyTaxAmount ? 'border-red-500' : ''
+                }`}
+              placeholder="Enter yearly tax amount"
+              min="0"
+              step="100"
+              aria-label="Yearly property tax amount in dollars"
+              aria-invalid={!!errors.yearlyTaxAmount}
+              aria-describedby={errors.yearlyTaxAmount ? 'yearlyTaxAmount-error' : undefined}
+            />
+            {errors.yearlyTaxAmount && (
+              <p id="yearlyTaxAmount-error" className="mt-1 text-sm text-red-600" role="alert">
+                {errors.yearlyTaxAmount}
+              </p>
+            )}
+          </div>
+
+          {errors.general && (
+            <div
+              className="p-3 bg-red-50 text-red-700 rounded-md"
+              role="alert"
+              aria-live="assertive"
+            >
+              {errors.general}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Calculate monthly mortgage payment"
+            disabled={isLoading}
           >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Calculating...
+              </span>
+            ) : (
+              'Calculate Monthly Payment'
+            )}
+          </button>
+
+          {monthlyPayment !== null && (
+            <div
+              className="mt-6 p-4 bg-gray-50 rounded-md"
+              role="region"
+              aria-label="Monthly payment result"
+            >
+              <h2 className="text-lg font-semibold text-gray-800">Monthly Payment</h2>
+              <p
+                className="text-2xl font-bold text-blue-600"
+                aria-live="polite"
+              >
+                ${monthlyPayment.toFixed(2)}
+              </p>
+            </div>
+          )}
+        </form>
+      </div>
+    </main>
   );
-}
+} 
