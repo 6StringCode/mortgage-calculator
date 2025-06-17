@@ -5,8 +5,8 @@ import React, { useState, useEffect } from 'react';
 interface FormErrors {
   homePrice?: string;
   interestRate?: string;
-  yearlyTaxAmount?: string;
-  yearlyInsuranceAmount?: string;
+  annualTaxAmount?: string;
+  annualInsuranceAmount?: string;
   downPaymentPercent?: string;
   general?: string;
 }
@@ -14,8 +14,8 @@ interface FormErrors {
 export default function Home() {
   const [homePrice, setHomePrice] = useState<string>('');
   const [interestRate, setInterestRate] = useState<string>('6.5'); // Current average rate as of March 2024
-  const [yearlyTaxAmount, setYearlyTaxAmount] = useState<string>('');
-  const [yearlyInsuranceAmount, setYearlyInsuranceAmount] = useState<string>('');
+  const [annualTaxAmount, setAnnualTaxAmount] = useState<string>('');
+  const [annualInsuranceAmount, setAnnualInsuranceAmount] = useState<string>('');
   const [downPaymentPercent, setDownPaymentPercent] = useState<string>('20');
   const [downPaymentAmount, setDownPaymentAmount] = useState<string>('');
   const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
@@ -52,21 +52,21 @@ export default function Home() {
       isValid = false;
     }
 
-    // Validate Yearly Tax Amount
-    if (!yearlyTaxAmount) {
-      newErrors.yearlyTaxAmount = 'Yearly tax amount is required';
+    // Validate Annual Tax Amount
+    if (!annualTaxAmount) {
+      newErrors.annualTaxAmount = 'Annual tax amount is required';
       isValid = false;
-    } else if (parseFloat(yearlyTaxAmount) < 0) {
-      newErrors.yearlyTaxAmount = 'Yearly tax amount cannot be negative';
+    } else if (parseFloat(annualTaxAmount) < 0) {
+      newErrors.annualTaxAmount = 'Annual tax amount cannot be negative';
       isValid = false;
     }
 
-    // Validate Yearly Insurance Amount
-    if (!yearlyInsuranceAmount) {
-      newErrors.yearlyInsuranceAmount = 'Yearly insurance amount is required';
+    // Validate Annual Insurance Amount
+    if (!annualInsuranceAmount) {
+      newErrors.annualInsuranceAmount = 'Annual insurance amount is required';
       isValid = false;
-    } else if (parseFloat(yearlyInsuranceAmount) < 0) {
-      newErrors.yearlyInsuranceAmount = 'Yearly insurance amount cannot be negative';
+    } else if (parseFloat(annualInsuranceAmount) < 0) {
+      newErrors.annualInsuranceAmount = 'Annual insurance amount cannot be negative';
       isValid = false;
     }
 
@@ -104,12 +104,12 @@ export default function Home() {
       const principal = parseFloat(homePrice) - parseFloat(downPaymentAmount);
       const rate = parseFloat(interestRate) / 100 / 12;
       const term = 30 * 12;
-      const yearlyTax = parseFloat(yearlyTaxAmount);
-      const yearlyInsurance = parseFloat(yearlyInsuranceAmount);
+      const annualTax = parseFloat(annualTaxAmount);
+      const annualInsurance = parseFloat(annualInsuranceAmount);
 
       const monthlyMortgage = (principal * rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1);
-      const monthlyTax = yearlyTax / 12;
-      const monthlyInsurance = yearlyInsurance / 12;
+      const monthlyTax = annualTax / 12;
+      const monthlyInsurance = annualInsurance / 12;
       const totalMonthly = monthlyMortgage + monthlyTax + monthlyInsurance;
 
       setMonthlyPayment(totalMonthly);
@@ -246,62 +246,64 @@ export default function Home() {
             </p>
           </div>
 
-          <div>
-            <label htmlFor="yearlyTaxAmount" className="block text-sm font-medium text-gray-700">
-              Yearly Property Tax ($)
-            </label>
-            <input
-              type="number"
-              id="yearlyTaxAmount"
-              value={yearlyTaxAmount}
-              onChange={(e) => {
-                setYearlyTaxAmount(e.target.value);
-                setErrors(prev => ({ ...prev, yearlyTaxAmount: undefined }));
-              }}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.yearlyTaxAmount ? 'border-red-500' : ''
-                }`}
-              placeholder="Enter yearly tax amount"
-              aria-required="true"
-              min="0"
-              step="100"
-              aria-label="Yearly property tax amount"
-              aria-invalid={!!errors.yearlyTaxAmount}
-              aria-describedby={errors.yearlyTaxAmount ? 'yearlyTaxAmount-error' : undefined}
-            />
-            {errors.yearlyTaxAmount && (
-              <p id="yearlyTaxAmount-error" className="mt-1 text-sm text-red-600" role="alert">
-                {errors.yearlyTaxAmount}
-              </p>
-            )}
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="annualTaxAmount" className="block text-sm font-medium text-gray-700">
+                Annual Property Tax ($)
+              </label>
+              <input
+                type="number"
+                id="annualTaxAmount"
+                value={annualTaxAmount}
+                onChange={(e) => {
+                  setAnnualTaxAmount(e.target.value);
+                  setErrors(prev => ({ ...prev, annualTaxAmount: undefined }));
+                }}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.annualTaxAmount ? 'border-red-500' : ''
+                  }`}
+                placeholder="Enter annual tax amount"
+                aria-required="true"
+                min="0"
+                step="100"
+                aria-label="Annual property tax amount"
+                aria-invalid={!!errors.annualTaxAmount}
+                aria-describedby={errors.annualTaxAmount ? 'annualTaxAmount-error' : undefined}
+              />
+              {errors.annualTaxAmount && (
+                <p id="annualTaxAmount-error" className="mt-1 text-sm text-red-600" role="alert">
+                  {errors.annualTaxAmount}
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label htmlFor="yearlyInsuranceAmount" className="block text-sm font-medium text-gray-700">
-              Yearly Insurance ($)
-            </label>
-            <input
-              type="number"
-              id="yearlyInsuranceAmount"
-              value={yearlyInsuranceAmount}
-              onChange={(e) => {
-                setYearlyInsuranceAmount(e.target.value);
-                setErrors(prev => ({ ...prev, yearlyInsuranceAmount: undefined }));
-              }}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.yearlyInsuranceAmount ? 'border-red-500' : ''
-                }`}
-              placeholder="Enter yearly insurance amount"
-              aria-required="true"
-              min="0"
-              step="100"
-              aria-label="Yearly insurance amount"
-              aria-invalid={!!errors.yearlyInsuranceAmount}
-              aria-describedby={errors.yearlyInsuranceAmount ? 'yearlyInsuranceAmount-error' : undefined}
-            />
-            {errors.yearlyInsuranceAmount && (
-              <p id="yearlyInsuranceAmount-error" className="mt-1 text-sm text-red-600" role="alert">
-                {errors.yearlyInsuranceAmount}
-              </p>
-            )}
+            <div>
+              <label htmlFor="annualInsuranceAmount" className="block text-sm font-medium text-gray-700">
+                Annual Insurance ($)
+              </label>
+              <input
+                type="number"
+                id="annualInsuranceAmount"
+                value={annualInsuranceAmount}
+                onChange={(e) => {
+                  setAnnualInsuranceAmount(e.target.value);
+                  setErrors(prev => ({ ...prev, annualInsuranceAmount: undefined }));
+                }}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.annualInsuranceAmount ? 'border-red-500' : ''
+                  }`}
+                placeholder="Enter annual insurance amount"
+                aria-required="true"
+                min="0"
+                step="100"
+                aria-label="Annual insurance amount"
+                aria-invalid={!!errors.annualInsuranceAmount}
+                aria-describedby={errors.annualInsuranceAmount ? 'annualInsuranceAmount-error' : undefined}
+              />
+              {errors.annualInsuranceAmount && (
+                <p id="annualInsuranceAmount-error" className="mt-1 text-sm text-red-600" role="alert">
+                  {errors.annualInsuranceAmount}
+                </p>
+              )}
+            </div>
           </div>
 
           {errors.general && (
