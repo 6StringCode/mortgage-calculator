@@ -6,6 +6,7 @@ interface FormErrors {
   homePrice?: string;
   interestRate?: string;
   yearlyTaxAmount?: string;
+  yearlyInsuranceAmount?: string;
   downPaymentPercent?: string;
   general?: string;
 }
@@ -14,6 +15,7 @@ export default function Home() {
   const [homePrice, setHomePrice] = useState<string>('');
   const [interestRate, setInterestRate] = useState<string>('6.5'); // Current average rate as of March 2024
   const [yearlyTaxAmount, setYearlyTaxAmount] = useState<string>('');
+  const [yearlyInsuranceAmount, setYearlyInsuranceAmount] = useState<string>('');
   const [downPaymentPercent, setDownPaymentPercent] = useState<string>('20');
   const [downPaymentAmount, setDownPaymentAmount] = useState<string>('');
   const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
@@ -59,6 +61,15 @@ export default function Home() {
       isValid = false;
     }
 
+    // Validate Yearly Insurance Amount
+    if (!yearlyInsuranceAmount) {
+      newErrors.yearlyInsuranceAmount = 'Yearly insurance amount is required';
+      isValid = false;
+    } else if (parseFloat(yearlyInsuranceAmount) < 0) {
+      newErrors.yearlyInsuranceAmount = 'Yearly insurance amount cannot be negative';
+      isValid = false;
+    }
+
     // Validate Down Payment Percentage
     if (!downPaymentPercent) {
       newErrors.downPaymentPercent = 'Down payment percentage is required';
@@ -94,10 +105,12 @@ export default function Home() {
       const rate = parseFloat(interestRate) / 100 / 12;
       const term = 30 * 12;
       const yearlyTax = parseFloat(yearlyTaxAmount);
+      const yearlyInsurance = parseFloat(yearlyInsuranceAmount);
 
       const monthlyMortgage = (principal * rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1);
       const monthlyTax = yearlyTax / 12;
-      const totalMonthly = monthlyMortgage + monthlyTax;
+      const monthlyInsurance = yearlyInsurance / 12;
+      const totalMonthly = monthlyMortgage + monthlyTax + monthlyInsurance;
 
       setMonthlyPayment(totalMonthly);
     } catch {
@@ -248,15 +261,45 @@ export default function Home() {
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.yearlyTaxAmount ? 'border-red-500' : ''
                 }`}
               placeholder="Enter yearly tax amount"
+              aria-required="true"
               min="0"
               step="100"
-              aria-label="Yearly property tax amount in dollars"
+              aria-label="Yearly property tax amount"
               aria-invalid={!!errors.yearlyTaxAmount}
               aria-describedby={errors.yearlyTaxAmount ? 'yearlyTaxAmount-error' : undefined}
             />
             {errors.yearlyTaxAmount && (
               <p id="yearlyTaxAmount-error" className="mt-1 text-sm text-red-600" role="alert">
                 {errors.yearlyTaxAmount}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="yearlyInsuranceAmount" className="block text-sm font-medium text-gray-700">
+              Yearly Insurance ($)
+            </label>
+            <input
+              type="number"
+              id="yearlyInsuranceAmount"
+              value={yearlyInsuranceAmount}
+              onChange={(e) => {
+                setYearlyInsuranceAmount(e.target.value);
+                setErrors(prev => ({ ...prev, yearlyInsuranceAmount: undefined }));
+              }}
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.yearlyInsuranceAmount ? 'border-red-500' : ''
+                }`}
+              placeholder="Enter yearly insurance amount"
+              aria-required="true"
+              min="0"
+              step="100"
+              aria-label="Yearly insurance amount"
+              aria-invalid={!!errors.yearlyInsuranceAmount}
+              aria-describedby={errors.yearlyInsuranceAmount ? 'yearlyInsuranceAmount-error' : undefined}
+            />
+            {errors.yearlyInsuranceAmount && (
+              <p id="yearlyInsuranceAmount-error" className="mt-1 text-sm text-red-600" role="alert">
+                {errors.yearlyInsuranceAmount}
               </p>
             )}
           </div>
