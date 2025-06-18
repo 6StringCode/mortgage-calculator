@@ -125,7 +125,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen p-8 bg-gray-50" role="main">
-      <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+      <div className="max-w-lg mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Mortgage Calculator</h1>
 
         <form
@@ -246,7 +246,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="annualTaxAmount" className="block text-sm font-medium text-gray-700">
                 Annual Property Tax ($)
