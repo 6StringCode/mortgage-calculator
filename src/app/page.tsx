@@ -11,9 +11,15 @@ interface FormErrors {
   general?: string;
 }
 
+interface MortgageRateData {
+  rate: number;
+  date: string;
+  source: string;
+}
+
 export default function Home() {
   const [homePrice, setHomePrice] = useState<string>('');
-  const [interestRate, setInterestRate] = useState<string>('6.5'); // Current average rate as of March 2024
+  const [interestRate, setInterestRate] = useState<string>('6.5'); // Default fallback rate
   const [annualTaxAmount, setAnnualTaxAmount] = useState<string>('');
   const [annualInsuranceAmount, setAnnualInsuranceAmount] = useState<string>('');
   const [downPaymentPercent, setDownPaymentPercent] = useState<string>('20');
@@ -21,6 +27,31 @@ export default function Home() {
   const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [rateData, setRateData] = useState<MortgageRateData | null>(null);
+  const [isLoadingRate, setIsLoadingRate] = useState<boolean>(true);
+
+  // Fetch current mortgage rate on component mount
+  useEffect(() => {
+    const fetchCurrentRate = async () => {
+      try {
+        setIsLoadingRate(true);
+        const response = await fetch('/api/mortgage-rate');
+        if (response.ok) {
+          const data: MortgageRateData = await response.json();
+          setRateData(data);
+          setInterestRate(data.rate.toString());
+        } else {
+          console.warn('Failed to fetch current rate, using fallback');
+        }
+      } catch (error) {
+        console.warn('Error fetching current rate:', error);
+      } finally {
+        setIsLoadingRate(false);
+      }
+    };
+
+    fetchCurrentRate();
+  }, []);
 
   // Calculate down payment amount when home price or percentage changes
   useEffect(() => {
@@ -218,32 +249,53 @@ export default function Home() {
             <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700">
               Interest Rate (%)
             </label>
-            <input
-              type="number"
-              id="interestRate"
-              value={interestRate}
-              onChange={(e) => {
-                setInterestRate(e.target.value);
-                setErrors(prev => ({ ...prev, interestRate: undefined }));
-              }}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.interestRate ? 'border-red-500' : ''
-                }`}
-              placeholder="Enter interest rate"
-              step="0.01"
-              min="0"
-              max="100"
-              aria-label="Interest rate percentage"
-              aria-invalid={!!errors.interestRate}
-              aria-describedby={errors.interestRate ? 'interestRate-error' : undefined}
-            />
+            <div className="relative">
+              <input
+                type="number"
+                id="interestRate"
+                value={interestRate}
+                onChange={(e) => {
+                  setInterestRate(e.target.value);
+                  setErrors(prev => ({ ...prev, interestRate: undefined }));
+                }}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black ${errors.interestRate ? 'border-red-500' : ''
+                  }`}
+                placeholder="Enter interest rate"
+                step="0.01"
+                min="0"
+                max="100"
+                aria-label="Interest rate percentage"
+                aria-invalid={!!errors.interestRate}
+                aria-describedby={errors.interestRate ? 'interestRate-error' : undefined}
+                disabled={isLoadingRate}
+              />
+              {isLoadingRate && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              )}
+            </div>
             {errors.interestRate && (
               <p id="interestRate-error" className="mt-1 text-sm text-red-600" role="alert">
                 {errors.interestRate}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-500" aria-live="polite">
-              Current average 30-year fixed rate (as of March 2024)
-            </p>
+            <div className="mt-1 text-xs text-gray-500" aria-live="polite">
+              {isLoadingRate ? (
+                'Loading current mortgage rate...'
+              ) : rateData ? (
+                <>
+                  Current 30-year fixed rate: {rateData.rate}% (as of {new Date(rateData.date).toLocaleDateString()})
+                  <br />
+                  <span className="text-gray-400">Source: Freddie Mac PMMS</span>
+                </>
+              ) : (
+                'Current average 30-year fixed rate (fallback data)'
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
