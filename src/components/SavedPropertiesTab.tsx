@@ -69,7 +69,7 @@ export default function SavedPropertiesTab({
       <div className="space-y-3" role="list" aria-label="Property list">
         {properties.map((property) => (
           <div key={property.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" role="listitem">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
               <div className="flex-1">
                 {editingId === property.id ? (
                   <div className="flex items-center space-x-2">
@@ -104,7 +104,7 @@ export default function SavedPropertiesTab({
                   <h3 className="font-medium text-gray-900">{property.name}</h3>
                 )}
 
-                <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Home Price:</span>
                     <span className="ml-1 font-medium text-gray-900">${property.homePrice.toLocaleString()}</span>
@@ -128,7 +128,7 @@ export default function SavedPropertiesTab({
                 </div>
               </div>
 
-              <div className="flex space-x-2 ml-4">
+              <div className="flex justify-center sm:justify-end space-x-2">
                 <button
                   onClick={() => onEditProperty(property)}
                   className="text-blue-600 hover:text-blue-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
